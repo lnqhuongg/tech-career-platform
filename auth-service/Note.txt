@@ -1,0 +1,122 @@
+Các luồng chính:
+1. Đăng nhập:
+    - Tổng quan kiến trúc:
+                                                                              Client: Gửi request
+                                                                                            |
+        ===========================================================================
+                                                                                  AuthService:
+                                                                AuthController (nhận request từ client)
+                                                                                            |
+                                                            AuthServiceImpl (Xử lý nghiệp vụ đăng nhập - login())
+                                                                                            |
+                         AuthenticationManager (Điều phối xác thực tài khoản và mật khẩu (xác thực credentials))
+                                                                                            |
+                                          CustomerUserDetailsService (Tìm UserAccount thông qua repository)
+                                                                                            |
+                                    UserAccountRepository (Truy vấn SQL lấy thông tin tài khoản và password)
+                                                                                            |
+                                                            AuthenticationManager (Kiểm tra password)
+                                                                                            |
+                                    AuthServiceImpl (gọi JwtService phát hành JWT gắn vào response rồi trả về AuthController)
+                                                                                            |
+                                                                AuthController (trả response cho client)
+        ============================================================================
+    - Giả sử LoginRequest:
+        {
+          "email": "candidate@example.com",
+          "password": "password123"
+        }
+    - Luồng đi cụ thể:
+            Client gửi post với request trên đến AuthController
+                -> AuthController gọi login() trong AuthServiceImpl (thông qua interface IAuthService)
+                -> AuthServiceImpl yêu cầu SpringSecurity xác thực đâng nhập thông qua AuthenticationManager
+                -> AuthenticationManager tìm UserAccount theo email thông qua CustomerUserDetailsService
+                -> PasswordEncoder kiểm tra password người dùng nhập với password hash đã lưu
+                -> Xác thực password thành công, JwtService tạo JWT với subject và thời hạn được cấu hình
+                -> Access token được trả về trong AuthResponse cho client qua AuthController (AuthController nhận AuthResponse qua AuthServiceImpl)
+                *JSON trả về:
+                {
+                  "userId": "uuid",
+                  "email": "candidate@example.com",
+                  "accountType": "CANDIDATE",
+                  "accessToken": "<jwt-token>",
+                  "tokenType": "Bearer",
+                  "expiresInSeconds": 3600,
+                  "message": "Đăng nhập thành công"
+                }
+    + Client sẽ lưu và sử dụng access token cho các request tiếp theo
+
+2. Đăng ký
+    - Tổng quan kiến trúc:
+                                                                              Client: Gửi request
+                                                                                            |
+        ===========================================================================
+                                                                                  AuthService:
+                                                                AuthController (nhận request từ client)
+                                                                                            |
+                                                            AuthServiceImpl (Xử lý nghiệp vụ đăng ký register())
+                                                                                            |
+                                    UserAccountRepository (Lưu thông tin tài khoản mới vào db)
+                                                                                            |
+                                                                    AuthServiceImpl (trả response)
+                                                                                            |
+                                                              AuthController (trả response cho client)
+        ============================================================================
+    - Giả sử RegisterRequest:
+            {
+              "email": "recruiter.test@gmail.com",
+              "password": "Recruiter@123",
+              "fullName": "Trinh Tran Phuong Tuan",
+              "accountType": "RECRUITER"
+            }
+    - Luồng đi cụ thể:
+            Client gửi POST /api/auth/register kèm thông tin đăng ký.
+            -> AuthController tiếp nhận request và gọi phương thức register() thông qua IAuthService.
+            -> AuthServiceImpl thực hiện các nghiệp vụ:
+                    + Chuẩn hóa email (trim, lowercase).
+                    +Kiểm tra email đã tồn tại hay chưa thông qua UserAccountRepository.
+                    +Mã hóa mật khẩu bằng PasswordEncoder (BCrypt).
+                    + Thiết lập AccountType theo dữ liệu hợp lệ.
+                    + Gán role mặc định ROLE_USER.
+            -> AuthServiceImpl tạo đối tượng UserAccount và yêu cầu UserAccountRepository lưu vào PostgreSQL.
+            Sau khi lưu thành công, hệ thống trả response về Client.
+            {
+                "accessToken": null,
+                "accountType": "RECRUITER",
+                "email": "recruiter.test@gmail.com",
+                "expiresInSeconds": 0,
+                "message": "Đăng ký tài khoản thành công",
+                "tokenType": null,
+                "userId": "18cfc394-4870-4975-aa42-d47a3829b47d"
+            }
+3. Xác thực JWT khi gọi API
+    - Tổng quan kiến trúc:
+                                                                               Client: Gửi request
+                                                                                            |
+        ===========================================================================
+                                                                                  AuthService:
+                                                           JwtAuthenticationFilter (Đọc bearer token)
+                                                                                            |
+                                                                        JwtService (Xác minh JWT)
+                                                                                            |
+                                                           CustomerUserDetailsService (tải tài khoản hiện tại)
+                                                                                            |
+                                   JwtAuthenticationFilter (lưu authentication của user vào SecurityContextHolder)
+                                                                                            |
+                                                    Spring Security (kiểm tra authorities của user)
+                                                                                            |
+                                                                                AuthController
+        ============================================================================
++ Giả sử Client muốn truy cập:
+    GET /api/candidate/profile
+    Authorization: Bearer <jwt-token>
++ Luồng đi cụ thể:
+        Client gửi request kèm Bearer Token trong Authorization header
+        -> Request này sẽ đi qua JwtAuthenticationFilter trước khi tới AuthController
+        -> JWTAuthenticationFilter sẽ đọc JWT và gọi JwtService để xác minh chữ ký, thời hạn và email
+        -> CustomerUserDetailsService tải lại tài khoản từ db và lấy authorities hiện tại
+        -> SecurityContextHolder (trong JwtAuthenticationFilter) lưu authentication của user cho request hiện tại
+        -> Spring Security kiểm tra xem AccountType hiện tại (candidate) có được  truy cập endpoint không
+        -> Nếu có quyền truy cập, request sẽ được chuyển tới AuthController
+
+
