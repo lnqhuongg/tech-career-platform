@@ -1,5 +1,6 @@
 package com.dacn.auth_service.security;
 
+import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -66,25 +67,24 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
             return;
         }
-
         // Loại bỏ tiền tố "Bearer " để lấy JWT
         final String jwt = authHeader.substring(7);
 
         try {
             // Trích xuất email từ JWT
-            final String userEmail = jwtService.extractUsername(jwt);
+            // Bước này đã parse => nếu hết hạn thì sẽ ném exception
+            Claims claims = jwtService.parseToken(jwt);
+            String userEmail = claims.getSubject();
 
             // Chỉ xác thực nếu SecurityContext chưa có Authentication
             if (userEmail != null
                     && SecurityContextHolder.getContext()
                     .getAuthentication() == null) {
-
                 // Tìm tài khoản theo email
-                UserDetails userDetails =
-                        userDetailsService.loadUserByUsername(userEmail);
+                UserDetails userDetails = userDetailsService.loadUserByUsername(userEmail);
 
-                // Kiểm tra JWT có hợp lệ với tài khoản hay không
-                if (jwtService.isTokenValid(jwt, userDetails)
+                // Kiểm tra token có thuộc về user và account hiện tại còn hợp lệ khng
+                if (jwtService.isTokenValid(claims, userDetails)
                         && userDetails.isEnabled()
                         && userDetails.isAccountNonExpired()
                         && userDetails.isAccountNonLocked()
@@ -104,7 +104,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     .buildDetails(request)
                     );
 
-                    // Lưu Authentication vào SecurityContext
+                    // Lưu Authentication vào SecurityContext => đánh dấu request đã được xác thực
                     SecurityContextHolder.getContext()
                             .setAuthentication(authentication);
                 }
