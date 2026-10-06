@@ -12,13 +12,12 @@ import org.springframework.stereotype.Service;
 import javax.crypto.SecretKey;
 import java.time.Instant;
 import java.util.Date;
-import java.util.function.Function;
 
 /*
 * Class này có vai trò xử lý các thao tác với JWT:
 * Tạo token: generateToken()
-* Đọc thông tin từ token: tên tài khoản (extractUsername())
-* Kiểm tra tính hợp lệ của token
+ * Parse và xác thực token: parseToken()
+ * Kiểm tra token có thuộc về user hiện tại: isTokenValid()
 * */
 @Service
 public class JwtService {
@@ -59,56 +58,30 @@ public class JwtService {
                 .compact();
     }
 
-    // ======================================================
-    public String extractUsername(String token) {
-        return extractClaim(token, Claims::getSubject);
-    }
-
-    public <T> T extractClaim(
-            String token,
-            Function<Claims, T> claimsResolver
-    ) {
-        Claims claims = extractAllClaims(token);
-        return claimsResolver.apply(claims);
-    }
-
-    private Claims extractAllClaims(String token) {
-        return Jwts.parser()
-                .verifyWith(signingKey)
-                .build()
+    // Parse và kiểm tra thời hạn của token
+    public Claims parseToken(String token) {
+        return Jwts.parser() //Tạo ParserBuilder
+                .verifyWith(signingKey) // Cấu hình key để xác minh chữ ký
+                .build() // Tạo JwtParser hoàn chỉnh
                 .parseSignedClaims(token)
-                .getPayload();
+                /*
+                * Parse JwtParser đã được build
+                * Verify chữ ký
+                * Validate JWT (bao gồm việc xác minh JWT còn hạn hay không)
+                * */
+                .getPayload(); // Lấy phần Payload của JWT  (Chính là Claims á)
     }
-    /*
-    * Ở đây 3 th extract này lồng nhau
-    * extractUsername -> extractClaim -> extractAllClaims
-    * Đại khái là:
-    * + extractAllClaims Parse JWT, xác minh chữ ký và lấy payload chứa tất cả claims
-    * + Sau đó extractClaims sẽ lấy ra claims cụ thể mà mình muốn, thông qua param claimsResolver
-    * + extractUsername là hàm tái sử dụng extractClaim, cụ thể lấy ra subject của payload (subject chính là username luôn)
-    * => Có thể tái sử dụng extractClaim để lấy các claim khác (extractIssuedAt chẳng hạn)
-    * */
-    //==========================================================
 
     // Kiểm tra tính hợp lệ của token
+    // Token đã được kiểm tra thời hạn khi được parse -> Chỉ cần kiểm tra thêm subject có khớp với
+    // username hiện tại không
     public boolean isTokenValid(
-            String token,
+            Claims claims,
             UserDetails userDetails
     ) {
-        String username = extractUsername(token);
+        String username = claims.getSubject();
 
-        return username.equals(userDetails.getUsername())
-                && !isTokenExpired(token);
-    }
-
-    // Kiểm tra token hết hạn chưa, đang là hàm tính năng cho hàm kiểm tra tính hợp lệ
-    private boolean isTokenExpired(String token) {
-        Date expiration = extractClaim(
-                token,
-                Claims::getExpiration
-        );
-
-        return !expiration.after(new Date());
+        return username != null && username.equals(userDetails.getUsername());
     }
 
     public long getExpirationSeconds() {
