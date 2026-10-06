@@ -3,6 +3,7 @@ package com.dacn.auth_service.service.impl;
 import com.dacn.auth_service.dto.request.LoginRequest;
 import com.dacn.auth_service.dto.request.RegisterRequest;
 import com.dacn.auth_service.dto.response.AuthResponse;
+import com.dacn.auth_service.exception.EmailAlreadyExistsException;
 import com.dacn.auth_service.model.Role;
 import com.dacn.auth_service.model.UserAccount;
 import com.dacn.auth_service.repository.UserAccountRepository;
@@ -54,7 +55,7 @@ public class AuthServiceImpl implements IAuthService {
     public AuthResponse register(RegisterRequest request) {
         String email = normalizeEmail(request.getEmail());
         if (userAccountRepository.existsByEmail(email)) {
-            throw new IllegalArgumentException("Email đã được sử dụng");
+            throw new EmailAlreadyExistsException("Email đã được sử dụng");
         }
 
         UserAccount user = new UserAccount();
