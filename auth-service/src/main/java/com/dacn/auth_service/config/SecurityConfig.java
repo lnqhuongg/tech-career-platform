@@ -1,5 +1,7 @@
 package com.dacn.auth_service.config;
 
+import com.dacn.auth_service.security.CustomAccessDeniedHandler;
+import com.dacn.auth_service.security.CustomAuthenticationEntryPoint;
 import com.dacn.auth_service.security.JwtAuthenticationFilter;
 
 import org.springframework.context.annotation.Bean;
@@ -27,6 +29,16 @@ import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 @Configuration
 public class SecurityConfig {
 
+    private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
+    private final CustomAccessDeniedHandler customAccessDeniedHandler;
+    public SecurityConfig(
+            CustomAuthenticationEntryPoint customAuthenticationEntryPoint,
+            CustomAccessDeniedHandler customAccessDeniedHandler) {
+        this.customAuthenticationEntryPoint = customAuthenticationEntryPoint;
+        this.customAccessDeniedHandler = customAccessDeniedHandler;
+    }
+
+
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
@@ -36,15 +48,22 @@ public class SecurityConfig {
     @Bean
     public AuthenticationManager authenticationManager(
             AuthenticationConfiguration configuration
-    ) throws Exception {
+    ) {
         return configuration.getAuthenticationManager();
     }
 
+    /*
+     * SecurityFilterChain là chuỗi các Filter do Spring Security quản lý,
+     * chịu trách nhiệm xử lý và bảo vệ HTTP request trước khi request được chuyển đến Controller.
+     * SecurityConfig sử dụng HttpSecurity để khai báo các quy tắc xác thực, phân quyền và đăng ký các Filter cần thiết.
+     * Khi request đi qua SecurityFilterChain, các Filter sẽ thực hiện nhiệm vụ tương ứng như xác thực JWT, kiểm tra quyền truy cập
+     * và xử lý các trường hợp chưa được xác thực hoặc không đủ quyền.
+     */
     @Bean
     public SecurityFilterChain securityFilterChain(
             HttpSecurity http,
             JwtAuthenticationFilter jwtAuthenticationFilter
-    ) throws Exception {
+    ) {
 
         http
                 // Tắt CSRF cho API sử dụng cơ chế Bearer Token stateless
@@ -58,15 +77,15 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // Cho phép đăng ký và đăng nhập không cần JWT
                         .requestMatchers(
-                                "/api/auth/register",
-                                "/api/auth/login"
+                                "/auth/register",
+                                "/auth/login"
                         ).permitAll()
                         // Chỉ ROLE_ADMIN được truy cập API quản trị
-                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/admin/**").hasRole("ADMIN")
                         // Chỉ CANDIDATE được truy cập API ứng viên
-                        .requestMatchers("/api/candidate/**").hasAuthority("CANDIDATE")
+                        .requestMatchers("/candidate/**").hasAuthority("CANDIDATE")
                         // Chỉ RECRUITER được truy cập API nhà tuyển dụng
-                        .requestMatchers("/api/recruiter/**").hasAuthority("RECRUITER")
+                        .requestMatchers("/recruiter/**").hasAuthority("RECRUITER")
                         // Các API còn lại yêu cầu xác thực
                         .anyRequest().authenticated()
                 )
@@ -77,20 +96,13 @@ public class SecurityConfig {
                 )
                 .exceptionHandling(exception -> exception
                         .authenticationEntryPoint(
-                                new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)
+                                customAuthenticationEntryPoint
+                        )
+                        .accessDeniedHandler(
+                                customAccessDeniedHandler
                         )
                 );
 
         return http.build();
     }
-
-    /*
-     * SecurityFilterChain là chuỗi các Filter do Spring Security quản lý,
-     * chịu trách nhiệm xử lý và bảo vệ HTTP request trước khi request được chuyển đến Controller.
-     *
-     * SecurityConfig sử dụng HttpSecurity để khai báo các quy tắc xác thực, phân quyền và đăng ký các Filter cần thiết.
-     *
-     * Khi request đi qua SecurityFilterChain, các Filter sẽ thực hiện nhiệm vụ tương ứng như xác thực JWT, kiểm tra quyền truy cập
-     * và xử lý các trường hợp chưa được xác thực hoặc không đủ quyền.
-     */
 }
