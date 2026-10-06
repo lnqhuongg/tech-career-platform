@@ -1,6 +1,257 @@
-Các luồng chính:
+Luồng đi cụ thể:
+    + LOGIN:
+    ===============================================
+       CLIENT / POSTMAN
+             │
+             │ POST /api/auth/login
+             │ email + password
+             ↓
+          TOMCAT
+             ↓
+       SPRING SECURITY FILTER CHAIN
+             │
+             ├── JwtAuthenticationFilter
+             │      │
+             │      └── Login không có Bearer
+             │             → trực tiếp đi tới authorization
+             │
+             └── Authorization
+                    │
+                    └── auth/login = permitAll -> đi tiếp
+                           ↓
+                    DispatcherServlet
+                           ↓
+                    AuthController
+                           │
+                           │ login(request)
+                           ↓
+                    AuthServiceImpl
+                           │
+                           │ authenticationManager.authenticate()
+                           ↓
+                    AuthenticationManager
+                           ↓
+                    DaoAuthenticationProvider
+                           ↓
+                    CustomUserDetailsService
+                           ↓
+                    UserAccountRepository
+                           ↓
+                       PostgreSQL
+                           │
+                           ↓
+                      UserAccount
+                           │
+                           ↓
+                    PasswordEncoder
+                           │
+                    password matches?
+                           │
+             ┌─────┴─────┐
+             │                      │
+            NO                   YES
+             │                      │
+             ↓                    ↓
+         Exception             | authentication.getName()
+                                     │ jwtService.generateToken()
+                                     ↓
+                               AuthResponse
+                                     │
+                                     ↓
+                              AuthController
+                                     │
+                                     ↓
+                              ApiResponse
+                                     │
+                                     ↓
+                            Jackson / ObjectMapper (Thực tế là RestController đã Map dùm mình rồi)
+                                     │
+                                     ↓
+                               JSON Response
+                                     │
+                                     ↓
+                                  TOMCAT
+                                     │
+                                     ↓
+                             CLIENT / POSTMAN
+    ============================================================
+    + REGISTER:
+    ============================================================
+        CLIENT / POSTMAN
+              │
+              │ POST /auth/register
+              │ email + password + accountType
+              ↓
+           TOMCAT
+              ↓
+        SPRING SECURITY FILTER CHAIN
+              │
+              ├── JwtAuthenticationFilter
+              │      │
+              │      └── Register không có Bearer
+              │             → trực tiếp đi tới Authorization
+              │
+              └── Authorization
+                     │
+                     └── /auth/register = permitAll -> đi tiếp
+                            ↓
+                     DispatcherServlet
+                            ↓
+                     AuthController
+                            │
+                            │ register(request)
+                            ↓
+                     AuthServiceImpl
+                            │
+                            ├── Kiểm tra email đã tồn tại?
+                                                  |
+                            ┌────────────────────┐
+                            │                                        │
+                           YES                                  NO
+                            │                                      │
+                           ↓                                     ↓
+                        EmailAlready            UserAccount.setEmail(email)
+                        ExistsException                  ↓
+                            │                            PasswordEncoder(Bcrypt)
+                            │                                     ↓
+                            │                             UserAccount.setPassword(password đã được encode)
+                            ↓                                     ↓
+                        GlobalException        UserAccount.setAccountType(accountType)
+                        Handler                               ↓
+                            │                           UserAccount
+                            │                                     │
+                            │                                     ↓
+                            │                   UserAccountRepository
+                            │                                      │
+                            │                                      ↓
+                            │                             PostgreSQL
+                            │                                      │
+                            │                                     ↓
+                            │                       UserAccount saved
+                            │                                      │
+                            │                                     ↓
+                            │                           AuthResponse
+                            │                                      │
+                             |                                   ↓
+                             |                          AuthController
+                             |                                      │
+                            ↓                                     ↓
+                            └────────────────────
+                                                 ↓
+                                         ApiResponse
+                                                  │
+                                                  ↓
+                                Jackson / ObjectMapper
+                                                  │
+                                                  ↓
+                                        JSON Response
+                                                  │
+                                                  ↓
+                                           TOMCAT
+                                                  │
+                                                  ↓
+                                      CLIENT / POSTMAN
+    ==========================================================================
+    + JWT authentication:
+        CLIENT / POSTMAN
+              │
+              │ GET /api/test/protected
+              │ Authorization: Bearer <JWT>
+              ↓
+           TOMCAT
+              ↓
+        SPRING SECURITY FILTER CHAIN
+              │
+              ↓
+        JwtAuthenticationFilter
+              │
+              │ Lấy Authorization header
+              ↓
+           JWT Token
+              │
+              ↓
+        JwtService
+              │
+              ├── Parse JWT
+              │
+              ├── Verify Signature
+              │
+              ├── Parse Claims
+              │
+              └── Check expiration
+              │
+              ↓
+        username (email) từ Claims
+              │
+              ↓
+        CustomUserDetailsService
+              │
+              ↓
+        UserAccountRepository
+              │
+              ↓
+        PostgreSQL
+              │
+              ↓
+           UserAccount
+              │
+              ↓
+           UserDetails
+              │
+              ↓
+        JwtAuthenticationFilter
+              │
+              │ JWT hợp lệ?
+              │
+              ├───────┐
+              │               │
+             NO              YES
+              │               │
+              ↓               ↓
+        Clear Security    UsernamePassword
+        Context           AuthenticationToken
+              │               │
+              │               ↓
+              │        SecurityContextHolder
+              │               │
+              │               ↓
+              │        Authentication = user
+              │               │
+              │               ↓
+              │        Authorization Filter
+              │               │
+              │               ↓
+              │       User có quyền truy cập?
+              │               │
+              |         ┌───┴────┐
+              │         │               │
+              │        NO          YES
+              │         │               │
+              │         ↓           ↓
+              │        403      DispatcherServlet
+              │                         │
+              │                         ↓
+              │                    Controller
+              │                         │
+              │                         ↓
+              │                    Business Logic
+              │                         │
+              │                         ↓
+              │                     Response
+              │                         │
+              └──────────────
+                                ↓
+                        JSON Response
+                              │
+                              ↓
+                           TOMCAT
+                              │
+                              ↓
+                        CLIENT / POSTMAN
+===========================================================================
+Mô tả luồng đi:
 1. Đăng nhập:
-    - Tổng quan kiến trúc:
+    - Tóm tắt luồng đi:
                                                                               Client: Gửi request
                                                                                             |
         ===========================================================================
@@ -14,8 +265,6 @@ Các luồng chính:
                                           CustomerUserDetailsService (Tìm UserAccount thông qua repository)
                                                                                             |
                                     UserAccountRepository (Truy vấn SQL lấy thông tin tài khoản và password)
-                                                                                            |
-                                                            AuthenticationManager (Kiểm tra password)
                                                                                             |
                                     AuthServiceImpl (gọi JwtService phát hành JWT gắn vào response rồi trả về AuthController)
                                                                                             |
@@ -47,7 +296,7 @@ Các luồng chính:
     + Client sẽ lưu và sử dụng access token cho các request tiếp theo
 
 2. Đăng ký
-    - Tổng quan kiến trúc:
+    - Tóm tắt luồng đi:
                                                                               Client: Gửi request
                                                                                             |
         ===========================================================================
@@ -74,7 +323,7 @@ Các luồng chính:
             -> AuthController tiếp nhận request và gọi phương thức register() thông qua IAuthService.
             -> AuthServiceImpl thực hiện các nghiệp vụ:
                     + Chuẩn hóa email (trim, lowercase).
-                    +Kiểm tra email đã tồn tại hay chưa thông qua UserAccountRepository.
+                    + Kiểm tra email đã tồn tại hay chưa thông qua UserAccountRepository.
                     +Mã hóa mật khẩu bằng PasswordEncoder (BCrypt).
                     + Thiết lập AccountType theo dữ liệu hợp lệ.
                     + Gán role mặc định ROLE_USER.
@@ -90,7 +339,7 @@ Các luồng chính:
                 "userId": "18cfc394-4870-4975-aa42-d47a3829b47d"
             }
 3. Xác thực JWT khi gọi API
-    - Tổng quan kiến trúc:
+    - Tóm tắt luồng đi:
                                                                                Client: Gửi request
                                                                                             |
         ===========================================================================
@@ -118,5 +367,3 @@ Các luồng chính:
         -> SecurityContextHolder (trong JwtAuthenticationFilter) lưu authentication của user cho request hiện tại
         -> Spring Security kiểm tra xem AccountType hiện tại (candidate) có được  truy cập endpoint không
         -> Nếu có quyền truy cập, request sẽ được chuyển tới AuthController
-
-
