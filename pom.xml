@@ -21,6 +21,7 @@
         <module>user-service</module>
         <module>job-service</module>
         <module>application-service</module>
+        <module>resume-service</module>
     </modules>
 
     <properties>
