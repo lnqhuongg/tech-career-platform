@@ -1,0 +1,12 @@
+package com.dacn.job_service.dto;
+
+import lombok.*;
+import java.util.UUID;
+
+@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+public class SkillResponse {
+    private UUID id;
+    private String name;
+    private Boolean isRequired;
+    private Integer minYearsExperience;
+}
