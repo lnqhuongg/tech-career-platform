@@ -1,5 +1,5 @@
 -- =============================================================================
--- TECH CAREER PLATFORM - JOB SERVICE SCHEMA (POSTGRESQL)
+-- TECH CAREER PLATFORM - JOB SERVICE SCHEMA (POSTGRESQL) - REFINED
 -- =============================================================================
 
 DROP SCHEMA IF EXISTS job_service CASCADE;
@@ -17,25 +17,25 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto";
  * ----------------------------------------------------------------------------- */
 CREATE TABLE companies (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-
-    -- Nhà tuyển dụng đại diện / tạo công ty (tham chiếu sang User Service)
-    recruiter_id UUID NOT NULL,
-
     name VARCHAR(255) NOT NULL,
     logo_url VARCHAR(500),
-    banner_url VARCHAR(500),
     website VARCHAR(255),
     
     company_size VARCHAR(50) DEFAULT '50-150',  -- '1-50', '50-150', '150-500', '500-1000', '1000+'
-    industry VARCHAR(100),                      -- 'IT - Phần mềm', 'Fintech', 'Thương mại điện tử',...
+    industry VARCHAR(50),                       -- IT_SOFTWARE, FINTECH, ECOMMERCE,...
     description TEXT,
     
-    address VARCHAR(255),                       -- Trụ sở chính
+    address VARCHAR(255),                       -- Địa chỉ trụ sở
     city VARCHAR(100),                          -- TP. Hồ Chí Minh, Hà Nội, Đà Nẵng,...
-    country VARCHAR(100) DEFAULT 'Vietnam',
 
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT chk_companies_industry
+        CHECK (industry IS NULL OR industry IN (
+            'IT_SOFTWARE', 'FINTECH', 'ECOMMERCE', 'EDTECH',
+            'LOGISTICS', 'GAME', 'AI_DATA', 'BANKING', 'HEALTHCARE', 'OTHER'
+        ))
 );
 
 /* -----------------------------------------------------------------------------
@@ -43,10 +43,7 @@ CREATE TABLE companies (
  * ----------------------------------------------------------------------------- */
 CREATE TABLE job_categories (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    name VARCHAR(100) NOT NULL UNIQUE,          -- Tên hiển thị (VD: Lập trình phần mềm)
-    code VARCHAR(50) NOT NULL UNIQUE,          -- Mã định danh (VD: SOFTWARE_ENGINEERING)
-    description VARCHAR(255),
-    icon_url VARCHAR(500),
+    name VARCHAR(100) NOT NULL UNIQUE,          -- Tên hiển thị (VD: Lập trình phần mềm) ngành nghề lĩnh vực
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -56,9 +53,14 @@ CREATE TABLE job_categories (
 CREATE TABLE skills (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name VARCHAR(100) NOT NULL UNIQUE,          -- Java, Spring Boot, React, AWS, Docker,...
-    category VARCHAR(50) NOT NULL,              -- BACKEND, FRONTEND, MOBILE, DEVOPS, AI_DATA, DATABASE, TESTING, SECURITY
-    description VARCHAR(255),
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    category VARCHAR(50) NOT NULL,              -- BACKEND, FRONTEND, MOBILE, DEVOPS, AI_DATA,...
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT chk_skills_category
+        CHECK (category IN (
+            'BACKEND', 'FRONTEND', 'MOBILE', 'DATABASE',
+            'DEVOPS', 'AI_DATA', 'TESTING', 'SECURITY', 'OTHER'
+        ))
 );
 
 /* -----------------------------------------------------------------------------
@@ -69,7 +71,6 @@ CREATE TABLE jobs (
 
     -- Quan hệ nội bộ & liên service
     company_id UUID NOT NULL,
-    recruiter_id UUID NOT NULL,                 -- ID Recruiter đăng bài (User Service)
     category_id UUID,
 
     -- Nội dung chi tiết tin tuyển dụng
@@ -83,28 +84,21 @@ CREATE TABLE jobs (
     work_mode VARCHAR(30) NOT NULL DEFAULT 'ON_SITE',
     job_level VARCHAR(30) NOT NULL DEFAULT 'MIDDLE',
 
-    -- Yêu cầu kinh nghiệm (năm)
-    experience_years_min INT DEFAULT 0,
-    experience_years_max INT,
+    -- Yêu cầu kinh nghiệm (số năm tối thiểu)
+    experience_years INT DEFAULT 0,
 
-    -- Lương thưởng
-    salary_type VARCHAR(20) NOT NULL DEFAULT 'RANGE',
+    -- Lương thưởng (NULL cả hai = Thỏa thuận)
     salary_min DECIMAL(15, 2),
     salary_max DECIMAL(15, 2),
-    currency VARCHAR(10) NOT NULL DEFAULT 'VND',
-    is_salary_negotiable BOOLEAN NOT NULL DEFAULT FALSE,
 
-    -- Địa điểm & Số lượng tuyển
-    quantity INT NOT NULL DEFAULT 1,
+    -- Địa điểm làm việc
     location VARCHAR(100) NOT NULL,             -- TP.HCM, Hà Nội, Đà Nẵng, Remote,...
     address_detail VARCHAR(255),                -- Địa chỉ văn phòng làm việc cụ thể
 
-    -- Trạng thái & Thống kê vòng đời
-    status VARCHAR(30) NOT NULL DEFAULT 'DRAFT',
+    -- Trạng thái & Thống kê
+    status VARCHAR(30) NOT NULL DEFAULT 'PUBLISHED',
     views_count INT NOT NULL DEFAULT 0,
-    applications_count INT NOT NULL DEFAULT 0,
 
-    published_at TIMESTAMP,
     expires_at TIMESTAMP,                       -- Hạn chót ứng tuyển
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -122,7 +116,7 @@ CREATE TABLE jobs (
 
     -- Ràng buộc kiểm tra giá trị (Check constraints)
     CONSTRAINT chk_jobs_job_type
-        CHECK (job_type IN ('FULL_TIME', 'PART_TIME', 'CONTRACT', 'INTERNSHIP', 'FREELANCE')),
+        CHECK (job_type IN ('FULL_TIME', 'PART_TIME', 'CONTRACT', 'FREELANCE')),
 
     CONSTRAINT chk_jobs_work_mode
         CHECK (work_mode IN ('ON_SITE', 'REMOTE', 'HYBRID')),
@@ -130,22 +124,18 @@ CREATE TABLE jobs (
     CONSTRAINT chk_jobs_job_level
         CHECK (job_level IN ('INTERN', 'FRESHER', 'JUNIOR', 'MIDDLE', 'SENIOR', 'LEAD', 'MANAGER', 'DIRECTOR')),
 
-    CONSTRAINT chk_jobs_salary_type
-        CHECK (salary_type IN ('RANGE', 'FIXED', 'NEGOTIABLE')),
-
     CONSTRAINT chk_jobs_status
-        CHECK (status IN ('DRAFT', 'PENDING_APPROVAL', 'PUBLISHED', 'CLOSED', 'EXPIRED', 'REJECTED'))
+        CHECK (status IN ('PENDING', 'PUBLISHED', 'CLOSED', 'EXPIRED', 'REJECTED'))
 );
 
 /* -----------------------------------------------------------------------------
- * 5. TABLE: JOB_SKILLS (Bảng trung gian: Kỹ năng yêu cầu cho Job)
+ * 5. TABLE: JOB_SKILLS (Bảng trung gian n - n: Kỹ năng yêu cầu cho Job)
  * ----------------------------------------------------------------------------- */
 CREATE TABLE job_skills (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     job_id UUID NOT NULL,
     skill_id UUID NOT NULL,
-    is_required BOOLEAN NOT NULL DEFAULT TRUE,  -- TRUE: Must-have, FALSE: Nice-to-have
-    min_years_experience INT DEFAULT 0,
+
+    PRIMARY KEY (job_id, skill_id),
 
     CONSTRAINT fk_job_skills_job
         FOREIGN KEY (job_id)
@@ -155,42 +145,35 @@ CREATE TABLE job_skills (
     CONSTRAINT fk_job_skills_skill
         FOREIGN KEY (skill_id)
             REFERENCES skills(id)
-            ON DELETE CASCADE,
-
-    CONSTRAINT uq_job_skill
-        UNIQUE (job_id, skill_id)
+            ON DELETE CASCADE
 );
 
 /* -----------------------------------------------------------------------------
  * 6. TABLE: SAVED_JOBS (Việc làm ứng viên đã lưu lại)
  * ----------------------------------------------------------------------------- */
 CREATE TABLE saved_jobs (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     job_seeker_id UUID NOT NULL,                -- Ứng viên (User Service)
     job_id UUID NOT NULL,
     saved_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
+    PRIMARY KEY (job_seeker_id, job_id),
+
     CONSTRAINT fk_saved_jobs_job
         FOREIGN KEY (job_id)
             REFERENCES jobs(id)
-            ON DELETE CASCADE,
-
-    CONSTRAINT uq_saved_job_seeker
-        UNIQUE (job_seeker_id, job_id)
+            ON DELETE CASCADE
 );
 
 /* -----------------------------------------------------------------------------
  * 7. INDEXES (Tối ưu hóa truy vấn & tìm kiếm)
  * ----------------------------------------------------------------------------- */
 -- Company
-CREATE INDEX idx_companies_recruiter_id ON companies(recruiter_id);
 CREATE INDEX idx_companies_name ON companies(name);
 
 -- Job filters & listings
 CREATE INDEX idx_jobs_company_id ON jobs(company_id);
-CREATE INDEX idx_jobs_recruiter_id ON jobs(recruiter_id);
 CREATE INDEX idx_jobs_category_id ON jobs(category_id);
-CREATE INDEX idx_jobs_status_published_at ON jobs(status, published_at DESC);
+CREATE INDEX idx_jobs_status_created_at ON jobs(status, created_at DESC);
 CREATE INDEX idx_jobs_location ON jobs(location);
 CREATE INDEX idx_jobs_job_level ON jobs(job_level);
 CREATE INDEX idx_jobs_work_mode ON jobs(work_mode);
@@ -204,51 +187,4 @@ CREATE INDEX idx_job_skills_skill_id ON job_skills(skill_id);
 -- Saved Jobs
 CREATE INDEX idx_saved_jobs_seeker_id ON saved_jobs(job_seeker_id);
 
-/* -----------------------------------------------------------------------------
- * 8. SEED DATA MẪU (Dữ liệu ban đầu cho danh mục và kỹ năng)
- * ----------------------------------------------------------------------------- */
--- Danh mục chuyên môn IT
-INSERT INTO job_categories (name, code, description) VALUES
-('Phát triển phần mềm', 'SOFTWARE_ENGINEERING', 'Backend, Frontend, Fullstack, Mobile Development'),
-('Dữ liệu & Trí tuệ nhân tạo', 'DATA_AI', 'Data Engineering, Data Science, Machine Learning, AI'),
-('Điện toán đám mây & DevOps', 'CLOUD_DEVOPS', 'DevOps, Cloud Architecture, SRE, SysAdmin'),
-('Kiểm thử phần mềm', 'QA_QC', 'Manual Testing, Automation Testing, QA Lead'),
-('Quản lý sản phẩm & Dự án', 'PRODUCT_PROJECT', 'Product Owner, Product Manager, Scrum Master, PM'),
-('Bảo mật & An toàn thông tin', 'CYBER_SECURITY', 'Security Engineer, Penetration Tester, SOC')
-ON CONFLICT (code) DO NOTHING;
 
--- Danh mục kỹ năng công nghệ
-INSERT INTO skills (name, category) VALUES
--- Backend
-('Java', 'BACKEND'),
-('Spring Boot', 'BACKEND'),
-('Node.js', 'BACKEND'),
-('Python', 'BACKEND'),
-('Golang', 'BACKEND'),
-('.NET', 'BACKEND'),
--- Frontend
-('ReactJS', 'FRONTEND'),
-('VueJS', 'FRONTEND'),
-('Angular', 'FRONTEND'),
-('TypeScript', 'FRONTEND'),
-('Next.js', 'FRONTEND'),
--- Mobile
-('Flutter', 'MOBILE'),
-('React Native', 'MOBILE'),
-('Swift (iOS)', 'MOBILE'),
-('Kotlin (Android)', 'MOBILE'),
--- Database
-('PostgreSQL', 'DATABASE'),
-('MySQL', 'DATABASE'),
-('MongoDB', 'DATABASE'),
-('Redis', 'DATABASE'),
--- DevOps & Cloud
-('Docker', 'DEVOPS'),
-('Kubernetes', 'DEVOPS'),
-('AWS', 'DEVOPS'),
-('CI/CD', 'DEVOPS'),
--- AI & Data
-('TensorFlow', 'AI_DATA'),
-('PyTorch', 'AI_DATA'),
-('Pandas', 'AI_DATA')
-ON CONFLICT (name) DO NOTHING;

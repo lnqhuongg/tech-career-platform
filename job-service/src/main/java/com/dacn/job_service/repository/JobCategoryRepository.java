@@ -8,5 +8,5 @@ import java.util.UUID;
 
 @Repository
 public interface JobCategoryRepository extends JpaRepository<JobCategory, UUID> {
-    Optional<JobCategory> findByCode(String code);
+    Optional<JobCategory> findByName(String name);
 }

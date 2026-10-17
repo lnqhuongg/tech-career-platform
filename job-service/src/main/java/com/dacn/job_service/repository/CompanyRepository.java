@@ -7,5 +7,7 @@ import java.util.UUID;
 
 @Repository
 public interface CompanyRepository extends JpaRepository<Company, UUID> {
+    boolean existsByName(String name);
+    boolean existsByNameAndIdNot(String name, UUID id);
 }
 

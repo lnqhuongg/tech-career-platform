@@ -1,6 +1,9 @@
 package com.dacn.job_service.dto;
 
-import com.dacn.job_service.enums.*;
+import com.dacn.job_service.enums.JobLevel;
+import com.dacn.job_service.enums.JobStatus;
+import com.dacn.job_service.enums.JobType;
+import com.dacn.job_service.enums.WorkMode;
 import lombok.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -16,13 +19,11 @@ public class JobResponse {
     private JobType jobType;
     private WorkMode workMode;
     private JobLevel jobLevel;
-    private SalaryType salaryType;
     private BigDecimal salaryMin;
     private BigDecimal salaryMax;
-    private String currency;
     private String location;
     private JobStatus status;
     private List<SkillResponse> skills;
-    private LocalDateTime publishedAt;
     private LocalDateTime expiresAt;
+    private LocalDateTime createdAt;
 }

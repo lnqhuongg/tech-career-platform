@@ -1,5 +1,6 @@
 package com.dacn.job_service.dto;
 
+import com.dacn.job_service.enums.SkillCategory;
 import lombok.*;
 import java.util.UUID;
 
@@ -7,6 +8,5 @@ import java.util.UUID;
 public class SkillResponse {
     private UUID id;
     private String name;
-    private Boolean isRequired;
-    private Integer minYearsExperience;
+    private SkillCategory category;
 }

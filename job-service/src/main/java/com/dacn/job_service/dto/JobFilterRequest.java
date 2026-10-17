@@ -13,6 +13,7 @@ public class JobFilterRequest {
     private WorkMode workMode;
     private JobType jobType;
     private BigDecimal minSalary;
+    private UUID companyId;
     private UUID categoryId;
     private JobStatus status;
 }

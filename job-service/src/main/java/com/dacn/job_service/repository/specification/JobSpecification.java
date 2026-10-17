@@ -45,12 +45,17 @@ public class JobSpecification {
                 predicates.add(cb.greaterThanOrEqualTo(root.get("salaryMax"), request.getMinSalary()));
             }
 
-            // 7. Lọc theo Danh mục chuyên môn (Category ID)
+            // 7. Lọc theo Công ty (Company ID)
+            if (request.getCompanyId() != null) {
+                predicates.add(cb.equal(root.get("company").get("id"), request.getCompanyId()));
+            }
+
+            // 8. Lọc theo Danh mục chuyên môn (Category ID)
             if (request.getCategoryId() != null) {
                 predicates.add(cb.equal(root.get("category").get("id"), request.getCategoryId()));
             }
 
-            // 8. Trạng thái Job: Mặc định nếu không truyền thì chỉ lấy các Job PUBLISHED (đang tuyển)
+            // 9. Trạng thái Job: Mặc định nếu không truyền thì chỉ lấy các Job PUBLISHED (đang tuyển)
             if (request.getStatus() != null) {
                 predicates.add(cb.equal(root.get("status"), request.getStatus()));
             } else {
