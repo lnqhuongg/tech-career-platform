@@ -74,6 +74,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             // Trích xuất email từ JWT
             // Bước này đã parse => nếu hết hạn thì sẽ ném exception
             Claims claims = jwtService.parseToken(jwt);
+            // Chỉ Access Token mới được dùng để xác thực API
+            if (!jwtService.isAccessToken(claims)) {
+                SecurityContextHolder.clearContext();
+                filterChain.doFilter(request, response);
+                return;
+            }
             String userEmail = claims.getSubject();
 
             // Chỉ xác thực nếu SecurityContext chưa có Authentication

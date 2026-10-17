@@ -15,7 +15,7 @@ import java.io.IOException;
  * Custom AccessDeniedHandler dùng để xử lý trường hợp
  * user đã đăng nhập nhưng không có đủ quyền truy cập tài nguyên.
  * Ví dụ:
- * User đã có JWT hợp lệ có ROLE_USER nhưng lại gọi: admin/**
+ * Tài khoản đã xác thực nhưng không có quyền ADMIN khi gọi API quản trị
  * Khi đó Spring Security trả về HTTP 403 Forbidden.
  */
 @Component

@@ -14,6 +14,7 @@ public class AuthResponse {
     private final String message;
 
     private final String accessToken;
+    private final String refreshToken;
     private final String tokenType;
     private final long expiresInSeconds;
 
@@ -31,6 +32,7 @@ public class AuthResponse {
                 message,
                 null,
                 null,
+                null,
                 0
         );
     }
@@ -42,6 +44,7 @@ public class AuthResponse {
             AccountType accountType,
             String message,
             String accessToken,
+            String refreshToken,
             String tokenType,
             long expiresInSeconds
     ) {
@@ -50,6 +53,7 @@ public class AuthResponse {
         this.accountType = accountType;
         this.message = message;
         this.accessToken = accessToken;
+        this.refreshToken = refreshToken;
         this.tokenType = tokenType;
         this.expiresInSeconds = expiresInSeconds;
     }

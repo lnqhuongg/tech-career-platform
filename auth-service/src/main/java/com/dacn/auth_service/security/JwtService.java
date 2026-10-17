@@ -1,5 +1,6 @@
 package com.dacn.auth_service.security;
 
+import com.dacn.auth_service.model.UserAccount;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
@@ -18,6 +19,7 @@ import java.util.Date;
 * Tạo token: generateToken()
  * Parse và xác thực token: parseToken()
  * Kiểm tra token có thuộc về user hiện tại: isTokenValid()
+ * Không quản lý Refresh Token hoặc truy cập database
 * */
 @Service
 public class JwtService {
@@ -44,14 +46,17 @@ public class JwtService {
         this.jwtExpiration = jwtExpiration;
     }
 
-    // Tạo JWT
-    public String generateToken(UserDetails userDetails) {
+    // Tạo Access Token chứa định danh và quyền của tài khoản.
+    public String generateToken(UserAccount user) {
 
         Instant now = Instant.now();
         Instant expiration = now.plusMillis(jwtExpiration);
 
         return Jwts.builder()
-                .subject(userDetails.getUsername())
+                .subject(user.getUsername())
+                .claim("userId", user.getId().toString())
+                .claim("accountType", user.getAccountType().name())
+                .claim("token_type", "access")
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(expiration))
                 .signWith(signingKey)
@@ -82,6 +87,13 @@ public class JwtService {
         String username = claims.getSubject();
 
         return username != null && username.equals(userDetails.getUsername());
+    }
+
+    // Chỉ chấp nhận access token cho các API thông thường
+    public boolean isAccessToken(Claims claims) {
+        return "access".equals(
+                claims.get("token_type", String.class)
+        );
     }
 
     public long getExpirationSeconds() {

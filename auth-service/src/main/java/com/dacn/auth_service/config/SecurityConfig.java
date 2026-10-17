@@ -16,9 +16,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
-import org.springframework.http.HttpStatus;
-import org.springframework.security.web.authentication.HttpStatusEntryPoint;
-
 /*
 * Class này chịu trách nhiệm khai báo và tùy chỉnh các cấu hình liên quan đến Spring Security
 * Cụ thể là nó chủ yếu khai báo và quy định cách mà Spring Security sẽ phải hoạt động trong Service của mình:
@@ -78,10 +75,11 @@ public class SecurityConfig {
                         // Cho phép đăng ký và đăng nhập không cần JWT
                         .requestMatchers(
                                 "/auth/register",
-                                "/auth/login"
+                                "/auth/login",
+                                "/auth/refresh"
                         ).permitAll()
-                        // Chỉ ROLE_ADMIN được truy cập API quản trị
-                        .requestMatchers("/admin/**").hasRole("ADMIN")
+                        // Chỉ tài khoản có loại ADMIN được truy cập API quản trị
+                        .requestMatchers("/admin/**").hasAuthority("ADMIN")
                         // Chỉ CANDIDATE được truy cập API ứng viên
                         .requestMatchers("/candidate/**").hasAuthority("CANDIDATE")
                         // Chỉ RECRUITER được truy cập API nhà tuyển dụng

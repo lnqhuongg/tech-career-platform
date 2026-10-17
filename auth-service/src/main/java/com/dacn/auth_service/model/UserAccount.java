@@ -34,15 +34,6 @@ public class UserAccount implements UserDetails {
     @Column(name = "account_type", nullable = false)
     private AccountType accountType;
 
-    @ElementCollection(fetch = FetchType.EAGER)
-    @CollectionTable(
-            name = "user_roles",
-            joinColumns = @JoinColumn(name = "user_id")
-    )
-    @Enumerated(EnumType.STRING)
-    @Column(name = "role_name", nullable = false)
-    private Set<Role> roles = new HashSet<>();
-
     @Column(name = "is_active", nullable = false)
     private boolean isActive = true;
 
@@ -64,25 +55,11 @@ public class UserAccount implements UserDetails {
     }
 
     // Spring Security
-
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-
-        Set<GrantedAuthority> authorities = new HashSet<>();
-
-        // Quyền theo loại tài khoản
-        authorities.add(
+        return java.util.List.of(
                 new SimpleGrantedAuthority(accountType.name())
         );
-
-        // Quyền bổ vai trò (User, Admin, Moderator, ...)
-        roles.forEach(role ->
-                authorities.add(
-                        new SimpleGrantedAuthority(role.name())
-                )
-        );
-
-        return authorities;
     }
 
     // Vì UserAccount implement UserDetails nên ở đây override phương thức getUsername() trong interface chứ không dùng getEmail nho
