@@ -9,7 +9,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler({ AppException.class })
     public ResponseEntity<String> handleExceptionA(Exception e) {
-        return ResponseEntity.status(432).body(e.getMessage());
+        return ResponseEntity.status(500).body(e.getMessage());
     }
 
     @ExceptionHandler(Exception.class)

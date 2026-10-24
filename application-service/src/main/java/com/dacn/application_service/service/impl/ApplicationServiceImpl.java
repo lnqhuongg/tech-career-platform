@@ -50,7 +50,8 @@ public class ApplicationServiceImpl implements IApplicationService {
                     List.of(
                             ApplicationStatus.PENDING,
                             ApplicationStatus.REVIEWING,
-                            ApplicationStatus.INTERVIEW
+                            ApplicationStatus.INTERVIEW,
+                            ApplicationStatus.ACCEPTED
                     )
             );
 
