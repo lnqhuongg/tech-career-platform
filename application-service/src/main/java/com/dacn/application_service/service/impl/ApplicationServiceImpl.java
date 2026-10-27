@@ -10,10 +10,13 @@ import com.dacn.application_service.model.ApplicationHistory;
 import com.dacn.application_service.repository.ApplicationHistoryRepository;
 import com.dacn.application_service.repository.ApplicationRepository;
 import com.dacn.application_service.service.IApplicationService;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClient;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -24,12 +27,18 @@ public class ApplicationServiceImpl implements IApplicationService {
 
     private final ApplicationRepository applicationRepository;
     private final ApplicationHistoryRepository applicationHistoryRepository;
+    private final RestClient userRestClient;
+    private final RestClient jobRestClient;
 
     public ApplicationServiceImpl (
             ApplicationRepository applicationRepository,
-            ApplicationHistoryRepository applicationHistoryRepository) {
+            ApplicationHistoryRepository applicationHistoryRepository,
+            @Qualifier("userRestClient") RestClient userRestClient,
+            @Qualifier("jobRestClient") RestClient jobRestClient) {
         this.applicationRepository = applicationRepository;
         this.applicationHistoryRepository = applicationHistoryRepository;
+        this.userRestClient = userRestClient;
+        this.jobRestClient = jobRestClient;
     }
 
     /*
@@ -39,7 +48,12 @@ public class ApplicationServiceImpl implements IApplicationService {
     public ApplicationResponse create (CreateApplicationRequest request) {
 
         // Gọi user service kiểm tra tồn tại jobseeker id, kiểm tra thêm active, có phải là job seeker
-        // Gọi job service kiểm tra tồn tại job id với job có đang open không
+        ResponseEntity<String> response = userRestClient.get()
+                .uri("/candidate/{id}", request.getJobSeekerId())
+                .retrieve()
+                .toEntity(String.class);
+        // Gọi job service kiểm tra tồn tại job id với job có đang open/active không
+
         // Gọi resume service kiểm tra tồn tại resume id
 
         // Kiểm tra đã nộp CV vô job đó chưa

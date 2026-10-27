@@ -26,7 +26,13 @@ public class ApplicationController {
     @PostMapping
     public ResponseEntity<ApplicationResponse> create(
             @RequestBody CreateApplicationRequest request) {
+        System.out.println("Da vao API POST applications");
+        System.out.println("Job ID: " + request.getJobId());
+        System.out.println("Job Seeker ID: " + request.getJobSeekerId());
+
         ApplicationResponse response = applicationService.create(request);
+
+        System.out.println("Da tao application thanh cong");
         return ResponseEntity.ok(response);
     }
 

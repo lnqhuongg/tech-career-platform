@@ -1,6 +1,7 @@
 package com.dacn.application_service.dto;
 
 import com.dacn.application_service.enums.ApplicationStatus;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -9,6 +10,7 @@ import java.util.UUID;
 
 @Getter
 @Builder
+@JsonPropertyOrder
 public class ApplicationResponse {
     private UUID id;
     private UUID jobId;

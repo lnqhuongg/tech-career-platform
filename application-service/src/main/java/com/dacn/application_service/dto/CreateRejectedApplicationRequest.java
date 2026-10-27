@@ -1,10 +1,14 @@
 package com.dacn.application_service.dto;
 
-import lombok.Getter;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.util.UUID;
 
-@Getter
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class CreateRejectedApplicationRequest {
     private UUID recruiterId;
     private String note;
