@@ -1,16 +1,25 @@
-# React + Vite
+# TechCareer frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React application built with Vite.
 
-Currently, two official plugins are available:
+## Run locally
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+```bash
+npm install
+npm run dev
+```
 
-## React Compiler
+Vite prints the local URL after the development server starts. Run `npm run build` to create a production build and `npm run lint` to check the source.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Candidate pages
 
-## Expanding the ESLint configuration
+- `/` — candidate homepage with job search, companies, and market overview
+- `/signin` and `/login` — candidate sign in
+- `/signup` and `/register` — candidate registration
+- `/jobs-searching` — search and filter IT jobs
+- `/job-details` — job information and CV compatibility preview
+- `/company-details` — company overview and open positions
+- `/manage-cv` — candidate CV management
+- `/upload-cv` — upload a CV
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+Candidate pages currently use demonstration data. Authentication, job applications, and CV storage are not connected to a backend.
