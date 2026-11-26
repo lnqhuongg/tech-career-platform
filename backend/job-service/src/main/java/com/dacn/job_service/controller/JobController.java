@@ -145,4 +145,17 @@ public class JobController {
         Page<JobResponse> response = jobService.getSavedJobs(finalSeekerId, page, size);
         return ResponseEntity.ok(response);
     }
+
+    /*
+     * 11. CẬP NHẬT TRẠNG THÁI / KIỂM DUYỆT TIN TUYỂN DỤNG (ADMIN HOẶC NTD)
+     * URL: PATCH /jobs/{id}/status?status=PUBLISHED
+     */
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<JobDetailResponse> updateStatus(
+            @PathVariable UUID id,
+            @RequestParam com.dacn.job_service.enums.JobStatus status
+    ) {
+        JobDetailResponse response = jobService.updateJobStatus(id, status);
+        return ResponseEntity.ok(response);
+    }
 }
