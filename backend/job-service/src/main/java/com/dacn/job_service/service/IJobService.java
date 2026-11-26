@@ -16,4 +16,5 @@ public interface IJobService {
     void saveJob(UUID jobId, UUID seekerId);
     void unsaveJob(UUID jobId, UUID seekerId);
     Page<JobResponse> getSavedJobs(UUID seekerId, int page, int size);
+    JobDetailResponse updateJobStatus(UUID id, com.dacn.job_service.enums.JobStatus status);
 }

@@ -27,6 +27,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -339,6 +340,22 @@ public class JobServiceImpl implements IJobService {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "savedAt"));
         return savedJobRepository.findByIdJobSeekerId(seekerId, pageable)
                 .map(savedJob -> toJobResponse(savedJob.getJob()));
+    }
+
+    /* 11. CẬP NHẬT TRẠNG THÁI / KIỂM DUYỆT TIN TUYỂN DỤNG */
+    @Override
+    @Transactional
+    public JobDetailResponse updateJobStatus(UUID id, JobStatus status) {
+        if (status == null) {
+            throw new AppException(400, "Trạng thái công việc không được để trống");
+        }
+        Job job = jobRepository.findById(id)
+                .orElseThrow(() -> new AppException(404, "Không tìm thấy công việc với ID: " + id));
+
+        job.setStatus(status);
+        job.setUpdatedAt(LocalDateTime.now());
+        Job updated = jobRepository.save(job);
+        return toJobDetailResponse(updated);
     }
 
     // --- CÁC HÀM MAPPER CHUYỂN ENTITY THÀNH DTO ---
