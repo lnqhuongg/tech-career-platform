@@ -16,9 +16,9 @@ import UsersPage from '../pages/admin/UsersPage.jsx'
 export default function AdminRoutes() {
   return (
     <Routes>
-      <Route path="admin/login" element={<AdminLoginPage />} />
+      <Route path="login" element={<AdminLoginPage />} />
       <Route element={<AdminLayout />}>
-        <Route index element={<Navigate replace to="/dashboard" />} />
+        <Route index element={<Navigate replace to="/admin/dashboard" />} />
         <Route path="dashboard" element={<DashboardPage />} />
         <Route path="users" element={<UsersPage />} />
         <Route path="candidates" element={<CandidatesPage />} />
@@ -30,7 +30,7 @@ export default function AdminRoutes() {
         <Route path="skills" element={<SkillsPage />} />
         <Route path="statistics" element={<StatisticsPage />} />
         <Route path="profile" element={<ProfilePage />} />
-        <Route path="*" element={<Navigate replace to="/dashboard" />} />
+        <Route path="*" element={<Navigate replace to="/admin/dashboard" />} />
       </Route>
     </Routes>
   )

@@ -8,13 +8,13 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
+        <Route path="/admin/*" element={<AdminRoutes />} />
         <Route path="/recruiter/*" element={<RecruiterRoutes />} />
         <Route element={<CandidateLayout />}>
           {candidateRoutes.map(({ path, element }) => (
             <Route key={path} path={path} element={element} />
           ))}
         </Route>
-        <Route path="/*" element={<AdminRoutes />} />
       </Routes>
     </BrowserRouter>
   )

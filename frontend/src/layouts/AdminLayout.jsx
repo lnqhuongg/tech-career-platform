@@ -2,16 +2,16 @@ import { useEffect, useRef, useState } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 
 const navigation = [
-  { path: '/dashboard', label: 'Tổng quan', icon: 'grid' },
-  { path: '/users', label: 'Tất cả tài khoản', icon: 'users', badge: '1.2k' },
-  { path: '/candidates', label: 'Ứng viên', icon: 'users' },
-  { path: '/recruiters', label: 'Nhà tuyển dụng', icon: 'building' },
-  { path: '/jobs', label: 'Tin tuyển dụng', icon: 'briefcase' },
-  { path: '/applications', label: 'Đơn ứng tuyển', icon: 'file' },
-  { path: '/companies', label: 'Công ty', icon: 'building' },
-  { path: '/job-category', label: 'Danh mục công việc', icon: 'tag' },
-  { path: '/skills', label: 'Kỹ năng', icon: 'sparkles' },
-  { path: '/statistics', label: 'Báo cáo & thống kê', icon: 'chart' },
+  { path: '/admin/dashboard', label: 'Tổng quan', icon: 'grid' },
+  { path: '/admin/users', label: 'Tất cả tài khoản', icon: 'users', badge: '1.2k' },
+  { path: '/admin/candidates', label: 'Ứng viên', icon: 'users' },
+  { path: '/admin/recruiters', label: 'Nhà tuyển dụng', icon: 'building' },
+  { path: '/admin/jobs', label: 'Tin tuyển dụng', icon: 'briefcase' },
+  { path: '/admin/applications', label: 'Đơn ứng tuyển', icon: 'file' },
+  { path: '/admin/companies', label: 'Công ty', icon: 'building' },
+  { path: '/admin/job-category', label: 'Danh mục công việc', icon: 'tag' },
+  { path: '/admin/skills', label: 'Kỹ năng', icon: 'sparkles' },
+  { path: '/admin/statistics', label: 'Báo cáo & thống kê', icon: 'chart' },
 ]
 
 const iconPaths = {
@@ -60,7 +60,7 @@ export default function AdminLayout({ children }) {
   const accountMenuRef = useRef(null)
   const location = useLocation()
   const activeItem = navigation.find((item) => item.path === location.pathname)
-    ?? (location.pathname === '/profile' ? { label: 'Thông tin tài khoản' } : undefined)
+    ?? (location.pathname === '/admin/profile' ? { label: 'Thông tin tài khoản' } : undefined)
 
   useEffect(() => {
     function handlePointerDown(event) {
@@ -94,7 +94,7 @@ export default function AdminLayout({ children }) {
       )}
       <aside className={`fixed inset-y-0 left-0 z-40 flex w-[240px] flex-col border-r border-slate-200 bg-white text-slate-600 transition-transform duration-300 lg:translate-x-0 ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="flex h-[76px] items-center justify-between border-b border-slate-100 px-5">
-          <NavLink className="flex items-center gap-2.5" to="/dashboard" onClick={() => setMobileMenuOpen(false)}>
+          <NavLink className="flex items-center gap-2.5" to="/admin/dashboard" onClick={() => setMobileMenuOpen(false)}>
             <span className="grid h-9 w-9 place-items-center rounded-xl bg-cyan-50 text-cyan-700">
               <Icon name="briefcase" size={20} />
             </span>
@@ -182,7 +182,7 @@ export default function AdminLayout({ children }) {
                   <NavLink
                     className="mt-1 flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-[14px] font-medium text-slate-700 transition hover:bg-slate-50"
                     onClick={() => setAccountMenuOpen(false)}
-                    to="/profile"
+                    to="/admin/profile"
                     role="menuitem"
                   >
                     <Icon name="user" size={16} className="text-slate-500" />
